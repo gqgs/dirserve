@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Video player</title>
+    <style>
+body {
+    background-color: #333;
+}
+/* CSS for the video player and playlist */
+#video-player-container {
+  position: relative;
+  width: 50%;
+  height: 500px;
+  /* set a fixed height */
+  margin: 0 auto;
+}
+#video-player {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+}
+#playlist {
+  width: 50%;
+  background-color: #222;
+  padding: 20px;
+  overflow: auto;
+  height: 500px;
+  display: flex;
+  flex-direction: column;
+  color: #fff;
+  font-weight: bold;
+  font-size: 16px;
+  margin: 0 auto;
+}
+.playlist-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+  cursor: pointer;
+  padding: 10px;
+  border-radius: 5px;
+}
+.playlist-item:hover {
+  background-color: #444;
+}
+.playlist-item .title {
+  margin-right: 10px;
+}
+.current {
+  background-color: #444;
+}
+/* Flexbox styles to display video player and playlist side-by-side */
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  background-color: #333;
+  color: #fff;
+  font-weight: bold;
+  font-size: 16px;
+  height: 500px;
+  /* set a fixed height */
+  margin: 0 auto;
+  max-width: 1000px;
+  gap: 10px;
+  /* set a max width */
+}
+
+    </style>
+  </head>
+  <body>
+    <div class="container">
+    <div id="video-player-container">
+        <video id="video-player" controls>
+        <source src="" type="video/mp4" />
+        </video>
+    </div>
+    <div id="playlist"></div>
+    </div>      
+    <script>
+      // JavaScript for the video player and playlist
+      const videoPlayer = document.getElementById("video-player");
+      const playlistContainer = document.getElementById("playlist");
+      let currentPlaylistItem = null;
+
+      // Fetch playlist data from endpoint
+      fetch("/api/playlist")
+        .then((response) => response.json())
+        .then((data) => {
+          // Loop through playlist data and create playlist items
+          data.forEach((item) => {
+            const playlistItem = document.createElement("div");
+            playlistItem.classList.add("playlist-item");
+            playlistItem.textContent = item.title;
+            playlistItem.setAttribute("data-src", item.video_url);
+            playlistContainer.appendChild(playlistItem);
+
+            // Add click event listener to playlist item
+            playlistItem.addEventListener("click", () => {
+              const src = playlistItem.getAttribute("data-src");
+              setCurrentPlaylistItem(playlistItem);
+              playVideo(src);
+            });
+          });
+          // Start playing the first video in the playlist
+          if (data.length > 0) {
+            setCurrentPlaylistItem(playlistContainer.firstElementChild);
+            playVideo(playlistContainer.firstElementChild.getAttribute("data-src"));
+          }
+        })
+        .catch((error) => console.error(error));
+
+      function setCurrentPlaylistItem(playlistItem) {
+        // Remove "current" class from previous playlist item
+        if (currentPlaylistItem) {
+          currentPlaylistItem.classList.remove("current");
+        }
+        // Add "current" class to new playlist item
+        currentPlaylistItem = playlistItem;
+        currentPlaylistItem.classList.add("current");
+      }
+
+      function playVideo(src) {
+        videoPlayer.src = src;
+        videoPlayer.play();
+      }
+
+      // Automatically play the next video when the current video ends
+      videoPlayer.addEventListener("ended", () => {
+        if (currentPlaylistItem.nextElementSibling) {
+          // Play the next video in the playlist
+          const src = currentPlaylistItem.nextElementSibling.getAttribute("data-src");
+          setCurrentPlaylistItem(currentPlaylistItem.nextElementSibling);
+          playVideo(src);
+        } else {
+          // Reached the end of the playlist
+          setCurrentPlaylistItem(null);
+          videoPlayer.pause();
+        }
+      });
+    </script>
+  </body>
+</html>
