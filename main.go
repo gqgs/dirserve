@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"flag"
+	"io/fs"
 	"log"
 	"net/http"
 	"os"
@@ -24,23 +25,17 @@ func main() {
 		http.ServeFile(w, r, "index.html")
 	})
 	http.HandleFunc("/api/playlist", func(w http.ResponseWriter, r *http.Request) {
-		// Specify the directory containing the video files
-
-		// Get a list of all the video files in the directory
-		videoFiles, err := filepath.Glob(filepath.Join(*directory, "*.mp4"))
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		// Create a list of playlist items
-		playlist := make([]map[string]string, 0, len(videoFiles))
-		for _, file := range videoFiles {
-			playlist = append(playlist, map[string]string{
-				"title":     filepath.Base(file),
-				"video_url": "/videos/" + filepath.Base(file),
-			})
-		}
+		var playlist []map[string]string
+		filepath.WalkDir(*directory, func(path string, d fs.DirEntry, err error) error {
+			filename := d.Name()
+			if isSupportedVideo(filename) {
+				playlist = append(playlist, map[string]string{
+					"title":     filename,
+					"video_url": "/videos/" + filename,
+				})
+			}
+			return nil
+		})
 
 		// Encode the playlist data as JSON and write it to the response
 		w.Header().Set("Content-Type", "application/json")
@@ -81,4 +76,8 @@ func setEnvironment() {
 			log.Fatal(err)
 		}
 	}
+}
+
+func isSupportedVideo(name string) bool {
+	return strings.HasSuffix(name, ".mp4") || strings.HasSuffix(name, ".webm")
 }
