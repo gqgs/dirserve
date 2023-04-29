@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"embed"
 	"encoding/json"
 	"flag"
 	"io/fs"
@@ -12,6 +13,10 @@ import (
 	"strings"
 )
 
+//go:embed env.txt
+//go:embed index.html
+var content embed.FS
+
 func init() {
 	setEnvironment()
 }
@@ -21,9 +26,7 @@ func main() {
 	var address = flag.String("address", os.Getenv("ADDRESS"), "address to listen")
 	flag.Parse()
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "index.html")
-	})
+	http.Handle("/", http.FileServer(http.FS(content)))
 	http.HandleFunc("/api/playlist", func(w http.ResponseWriter, r *http.Request) {
 		var playlist []map[string]string
 		filepath.WalkDir(*directory, func(path string, d fs.DirEntry, err error) error {
@@ -54,7 +57,7 @@ func main() {
 
 func setEnvironment() {
 	// Open the file with the environment variables
-	file, err := os.Open("env.txt")
+	file, err := content.Open("env.txt")
 	if err != nil {
 		log.Fatal(err)
 	}
