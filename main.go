@@ -66,14 +66,10 @@ func setEnvironment() {
 	// Scan the file line by line
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		// Split the line by "="
-		pair := strings.SplitN(scanner.Text(), "=", 2)
-		if len(pair) != 2 {
-			continue // Skip invalid lines
+		key, value, found := strings.Cut(scanner.Text(), "=")
+		if !found {
+			continue
 		}
-		// Set the environment variable
-		key := pair[0]
-		value := pair[1]
 		err := os.Setenv(key, value)
 		if err != nil {
 			log.Fatal(err)
