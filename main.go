@@ -76,8 +76,11 @@ func setEnvironment() {
 		if !found {
 			continue
 		}
-		err := os.Setenv(key, value)
-		if err != nil {
+		if os.Getenv(key) != "" {
+			// already defined
+			continue
+		}
+		if err := os.Setenv(key, value); err != nil {
 			log.Fatal(err)
 		}
 	}
