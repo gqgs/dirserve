@@ -2,44 +2,77 @@
 <html>
   <head>
     <title>Video player</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
     <link href='https://fonts.googleapis.com/css?family=Ubuntu' rel='stylesheet'>
     <style>
+      /* mobile */
+      @media only screen and (max-width: 1100px) {
+        .col {
+          width: 100%;
+        }
+        .row {
+          flex-direction: column;
+        }
+      }
+
+      /* desktop */
+      @media only screen and (min-width: 1100px), only screen and (orientation: landscape)  {
+        .col {
+          width: 50%;
+        }
+        .row {
+          flex-direction: row;
+        }
+      }
+
       .menu {
-        max-height: min(500px,60vh);
+        max-height: min(400px,50vh);
         overflow-y: auto;
       }
-      section {
+      .row {
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      video {
+        width: 100%;
+      }
+      button {
+        width: 95%;
+        height: 40px;
+        font-family: 'Ubuntu';
+        text-align: left;
+        cursor: pointer;
+        border-radius: 8px;
+      }
+      button.active {
+        background-color: darkblue;
+        color: white;
+      }
+
+      body {
         background: rgb(147,158,158);
         background: linear-gradient(0deg, rgba(147,158,158,1) 0%, rgba(122,138,177,1) 100%);
-      }
-      li:hover {
-        color: black;
-      }
-      a {
-        font-family: 'Ubuntu';
       }
     </style>
   </head>
   <body>
-    <section class="hero is-fullheight is-dark">
-      <div class="hero-body">
-        <div class="columns">
-          <div class="column is-6">
-            <div id="video-player-container">
-              <video id="video-player" controls>
-              <source src="" />
-              </video>
-            </div>
+    <div class="container">
+      <div class="row">
+        <div class="col">
+          <div class="card" id="video-player-container">
+            <video id="video-player" controls>
+            <source src="" />
+            </video>
           </div>
-          <div class="column is-6">
-            <aside class="menu">
-              <ul id="playlist" class="menu-list"></ul>
-            </aside>
+        </div>
+        <div class="col">
+          <div class="card menu">
+            <ul id="playlist" class="list-group"></ul>
           </div>
         </div>
       </div>
-    </section>
+    </div>
     <script>
       // JavaScript for the video player and playlist
       const videoPlayer = document.getElementById("video-player");
@@ -52,16 +85,16 @@
         .then((data) => {
           // Loop through playlist data and create playlist items
           data.forEach((item) => {
-            const playlistAnchor = document.createElement("a");
-            const playlistItem = document.createElement("li");
-            playlistAnchor.textContent = item.title;
-            playlistItem.appendChild(playlistAnchor);
+            const playlistItem = document.createElement("button");
+            playlistItem.type = "button";
+            playlistItem.classList.add("list-group-item", "list-group-item-action");
+            playlistItem.textContent = item.title;
 
             playlistItem.setAttribute("data-src", item.video_url);
             playlistContainer.appendChild(playlistItem);
 
             // Add click event listener to playlist item
-            playlistAnchor.addEventListener("click", () => {
+            playlistItem.addEventListener("click", () => {
               const src = playlistItem.getAttribute("data-src");
               setCurrentPlaylistItem(playlistItem);
               playVideo(src);
@@ -78,11 +111,11 @@
       function setCurrentPlaylistItem(playlistItem) {
         // Remove "current" class from previous playlist item
         if (currentPlaylistItem) {
-          currentPlaylistItem.firstElementChild.classList.remove("is-active");
+          currentPlaylistItem.classList.remove("active");
         }
         // Add "current" class to new playlist item
         currentPlaylistItem = playlistItem;
-        currentPlaylistItem.firstElementChild.classList.add("is-active");
+        currentPlaylistItem.classList.add("active");
       }
 
       function playVideo(src) {
