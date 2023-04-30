@@ -24,9 +24,15 @@ func init() {
 func main() {
 	var directory = flag.String("dir", os.Getenv("DIRECTORY"), "serve directory")
 	var address = flag.String("address", os.Getenv("ADDRESS"), "address to listen")
+	var dev = flag.Bool("dev", false, "run in development mode")
 	flag.Parse()
 
-	http.Handle("/", http.FileServer(http.FS(content)))
+	if *dev {
+		http.Handle("/", http.FileServer(http.FS(os.DirFS("."))))
+	} else {
+		http.Handle("/", http.FileServer(http.FS(content)))
+	}
+
 	http.HandleFunc("/api/playlist", func(w http.ResponseWriter, r *http.Request) {
 		var playlist []map[string]string
 		filepath.WalkDir(*directory, func(path string, d fs.DirEntry, err error) error {
