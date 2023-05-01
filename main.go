@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 )
 
@@ -44,6 +45,10 @@ func main() {
 				})
 			}
 			return nil
+		})
+
+		sort.Slice(playlist, func(i, j int) bool {
+			return strings.ToLower(playlist[i]["title"]) < strings.ToLower(playlist[j]["title"])
 		})
 
 		// Encode the playlist data as JSON and write it to the response
