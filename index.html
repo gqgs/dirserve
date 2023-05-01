@@ -119,7 +119,7 @@
       }
 
       function playVideo(src) {
-        videoPlayer.src = src;
+        videoPlayer.src = encodeURIComponent(src);
         videoPlayer.play();
       }
 
