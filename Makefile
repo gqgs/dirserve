@@ -1,6 +1,8 @@
 
 install: main
 
-main:
-	go install
+generate:
+	go generate ./...
 
+main: generate
+	go install

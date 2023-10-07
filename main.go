@@ -4,15 +4,17 @@ import (
 	"bufio"
 	"embed"
 	"encoding/json"
-	"flag"
 	"io/fs"
 	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 )
+
+//go:generate go run github.com/gqgs/argsgen@latest
 
 //go:embed env.txt
 //go:embed index.html
@@ -22,13 +24,21 @@ func init() {
 	setEnvironment()
 }
 
-func main() {
-	var directory = flag.String("dir", os.Getenv("DIRECTORY"), "serve directory")
-	var address = flag.String("address", os.Getenv("ADDRESS"), "address to listen")
-	var dev = flag.Bool("dev", false, "run in development mode")
-	flag.Parse()
+type options struct {
+	directory, dir string `arg:"directory to serve,required"`
+	address        string `arg:"address to listen,required"`
+	dev            bool   `arg:"run in development mode"`
+}
 
-	if *dev {
+func main() {
+	o := options{
+		directory: os.Getenv("DIRECTORY"),
+		address:   os.Getenv("ADDRESS"),
+		dev:       false,
+	}
+	o.MustParse()
+
+	if o.dev {
 		http.Handle("/", http.FileServer(http.FS(os.DirFS("."))))
 	} else {
 		http.Handle("/", http.FileServer(http.FS(content)))
@@ -36,7 +46,7 @@ func main() {
 
 	http.HandleFunc("/api/playlist", func(w http.ResponseWriter, r *http.Request) {
 		var playlist []map[string]string
-		filepath.WalkDir(*directory, func(path string, d fs.DirEntry, err error) error {
+		filepath.WalkDir(o.directory, func(path string, d fs.DirEntry, err error) error {
 			filename := d.Name()
 			if isSupportedVideo(filename) {
 				playlist = append(playlist, map[string]string{
@@ -60,10 +70,15 @@ func main() {
 	})
 
 	// Serve static files from videos directory
-	http.Handle("/videos/", http.StripPrefix("/videos/", http.FileServer(http.Dir(*directory))))
+	http.Handle("/videos/", http.StripPrefix("/videos/", http.FileServer(http.Dir(o.directory))))
+
+	slog.Info("listening and serving",
+		slog.String("directory", o.directory),
+		slog.String("address", o.address),
+	)
 
 	// Start the server
-	http.ListenAndServe(*address, nil)
+	http.ListenAndServe(o.address, nil)
 }
 
 func setEnvironment() {
